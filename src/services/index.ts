@@ -1,0 +1,12 @@
+export { supabase, supabaseAuth, getCurrentUser, getSession } from "../integrations/supabase/client.ts";
+export { accountRequestService } from "./accountRequestService.ts";
+export { adminService } from "./adminService.ts";
+export { announcementService } from "./announcementService.ts";
+export { authService } from "./authService.ts";
+export { emailNotificationService } from "./emailNotificationService.ts";
+export { fileService } from "./fileService.ts";
+export { notificationService } from "./notificationService.ts";
+export { paymentService } from "./paymentService.ts";
+export { stallService } from "./stallService.ts";
+export { userService } from "./userService.ts";
+export { vendorService } from "./vendorService.ts";

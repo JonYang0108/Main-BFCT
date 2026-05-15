@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    
+
+    "baseUrl": ".",
+
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+
+    "moduleResolution": "node"
+  },
+
+  "files": [],
+
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+
+  "exclude": [
+    "backend",
+    "node_modules",
+    "dist",
+    "supabase",
+    "supabase/functions"
+  ]
+}
