@@ -29,7 +29,10 @@ declare const Deno: DenoNamespace;
 // LOGGING & DIAGNOSTICS
 // ============================================================================
 
-const REQUEST_ID = `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+function createRequestId() {
+  return `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+const REQUEST_ID = createRequestId();
 
 interface LogEntry {
   timestamp: string;
@@ -554,9 +557,11 @@ async function createVendorAccount(
   }
 
   if (profileError) {
+    await supabase.auth.admin.deleteUser(userId);
+    log("error", "ROLLBACK TRIGGERED - profile failed");
     log(
       "error",
-      "vendor.create profile insert failed, rolling back",
+      "vendor.create profile creation failed",
       { userId },
       profileError,
     );

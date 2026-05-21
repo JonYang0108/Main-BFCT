@@ -1,9 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
-import { Bell, Store, TrendingUp, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Bell,
+  BarChart3,
+  CreditCard,
+  RefreshCw,
+  Store,
+  TrendingUp,
+  Users,
+  Users2,
+  Wallet,
+} from "lucide-react";
 
 import AnnouncementStatusBadge from "@/components/announcements/AnnouncementStatusBadge";
 import DashboardLayout from "@/components/DashboardLayout";
 import RecentPaymentsList from "@/components/payments/RecentPaymentsList";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
+
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
@@ -11,11 +24,12 @@ import { announcementService } from "@/services/announcementService";
 import { paymentService } from "@/services/paymentService";
 import { stallService } from "@/services/stallService";
 import { vendorService } from "@/services/vendorService";
-import type {
-  AnnouncementRow,
-  DashboardRecentPayment,
-  StallsListViewRow,
-} from "@/types/domain";
+import { EmptyState } from "@/components/dashboard/staff/StaffDesignSystem";
+import { StatCard, AnimatedCounter, SectionCard } from "@/components/dashboard/staff/StaffDesignSystem";
+import type { AnnouncementRow, DashboardRecentPayment, StallsListViewRow } from "@/types/domain";
+
+import { Area, Bar, CartesianGrid, Line, LineChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+
 
 interface StaffDashboardState {
   announcements: AnnouncementRow[];

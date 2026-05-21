@@ -14,11 +14,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function extractFunctionErrorMessage(result: unknown): string | null {
-  if (!isRecord(result)) {
-    return null;
+  if (!isRecord(result)) return null;
+
+  // Expected edge response shape:
+  // { error: string, code?: string, requestId?: string }
+  if (typeof result.error === "string") {
+    const code = typeof result.code === "string" ? ` [${result.code}]` : "";
+    const requestId = typeof result.requestId === "string"
+      ? ` (requestId: ${result.requestId})`
+      : "";
+    return `${result.error}${code}${requestId}`;
   }
 
-  return typeof result.error === "string" ? result.error : null;
+  // Sometimes wrapper shapes land in `data`, e.g. { body: { error, code, requestId } }
+  const body = (result as Record<string, unknown>).body;
+  if (isRecord(body) && typeof body.error === "string") {
+    const code = typeof body.code === "string" ? ` [${body.code}]` : "";
+    const requestId = typeof body.requestId === "string"
+      ? ` (requestId: ${body.requestId})`
+      : "";
+    return `${body.error}${code}${requestId}`;
+  }
+
+  return null;
 }
 
 export const adminService = {
@@ -64,6 +82,10 @@ export const adminService = {
       throw toAppError(error, "Unable to create the vendor account.");
     }
 
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
     const edgeErrorMessage = extractFunctionErrorMessage(data);
 
     if (edgeErrorMessage) {
@@ -84,6 +106,10 @@ export const adminService = {
 
     if (error) {
       throw toAppError(error, "Unable to delete the vendor account.");
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
     }
 
     const edgeErrorMessage = extractFunctionErrorMessage(data);

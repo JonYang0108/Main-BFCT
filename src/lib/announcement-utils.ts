@@ -22,11 +22,19 @@ export function normalizeAnnouncementStatus(input: {
 }
 
 export function getAnnouncementLegacyType(status: AnnouncementStatus): string {
-  // Backwards-compatible mapping to the DB enum.
   // announcement_status is separate from notification_type.
-  // We store announcements as notification_type values in `announcements.type`.
-
-  return "status";
+  // `announcements.type` uses the `public.notification_type` enum.
+  // Map UI status -> DB enum label.
+  switch (status) {
+    case "urgent":
+      return "urgent";
+    case "warning":
+      return "warning";
+    case "normal":
+    default:
+      // DB enum has 'system' as the default/neutral value.
+      return "system";
+  }
 }
 
 export function sortAnnouncementsByPriority<

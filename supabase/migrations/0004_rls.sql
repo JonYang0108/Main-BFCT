@@ -210,6 +210,7 @@ on public.stalls
 for insert
 to authenticated
 with check (
+  -- allow admin/staff inserts
   (select public.has_role('admin', (select auth.uid())))
   or (select public.has_role('staff', (select auth.uid())))
 );

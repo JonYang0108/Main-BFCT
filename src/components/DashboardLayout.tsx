@@ -35,7 +35,7 @@ const navItems: Record<
     { label: "Stalls", icon: Store, path: "/dashboard/admin/stalls" },
     { label: "Vendors", icon: Users, path: "/dashboard/admin/vendors" },
     { label: "Payments", icon: CreditCard, path: "/dashboard/admin/payments" },
-    { label: "Reports", icon: FileText, path: "/dashboard/admin/reports" },
+
     { label: "User Management", icon: UserCog, path: "/dashboard/admin/users" },
     {
       label: "Account Requests",
@@ -53,7 +53,7 @@ const navItems: Record<
     { label: "Stalls", icon: Store, path: "/dashboard/staff/stalls" },
     { label: "Vendors", icon: Users, path: "/dashboard/staff/vendors" },
     { label: "Payments", icon: CreditCard, path: "/dashboard/staff/payments" },
-    { label: "Reports", icon: BarChart3, path: "/dashboard/staff/reports" },
+
     {
       label: "Announcements",
       icon: Bell,
@@ -62,7 +62,6 @@ const navItems: Record<
   ],
   vendor: [
     { label: "Overview", icon: LayoutDashboard, path: "/dashboard/vendor" },
-    { label: "My Stall", icon: Store, path: "/dashboard/vendor/stall" },
     { label: "Payments", icon: CreditCard, path: "/dashboard/vendor/payments" },
     {
       label: "Announcements",
@@ -86,10 +85,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen flex bg-muted/30 dark:bg-background">
+    <div className="h-screen flex bg-muted/30 dark:bg-background overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex-col shrink-0 hidden lg:flex">
         <div className="p-4 border-b border-border">
+
           <Link to="/" className="flex items-center gap-3">
             <img
               src={logo}
@@ -106,8 +106,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </Link>
         </div>
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-hidden">
           {items.map((item) => {
+
             const active = location.pathname === item.path;
             return (
               <Link
@@ -220,7 +221,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <X className="h-5 w-5" />
                   </button>
                 </div>
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+
                   {items.map((item) => {
                     const active = location.pathname === item.path;
                     return (

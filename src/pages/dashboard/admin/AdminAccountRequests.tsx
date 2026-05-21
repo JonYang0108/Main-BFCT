@@ -37,7 +37,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { accountRequestService } from "@/services/accountRequestService";
+import { accountRequestServiceV2 } from "@/services/accountRequestService_v2";
 import { fileService } from "@/services/fileService";
 import type { AccountRequestRecord, VendorRequestStatus } from "@/types/domain";
 
@@ -94,7 +94,7 @@ export default function AdminAccountRequests() {
     try {
       setLoading(true);
       setErrorMessage(null);
-      setRequests(await accountRequestService.listAccountRequests());
+      setRequests(await accountRequestServiceV2.listAccountRequests());
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -155,7 +155,7 @@ export default function AdminAccountRequests() {
     setProcessingId(request.id);
 
     try {
-      await accountRequestService.approveAccountRequest(request.id);
+      await accountRequestServiceV2.approveAccountRequest(request.id);
       toast({
         title: "Account approved",
         description: `${request.full_name} can now access the vendor dashboard.`,
@@ -191,7 +191,7 @@ export default function AdminAccountRequests() {
     setProcessingId(selectedRequest.id);
 
     try {
-      await accountRequestService.declineAccountRequest(
+      await accountRequestServiceV2.declineAccountRequest(
         selectedRequest.id,
         declineReason,
       );

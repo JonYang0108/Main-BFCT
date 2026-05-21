@@ -5,9 +5,9 @@ import { fileService } from "@/services/fileService";
 import type {
   CreatePaymentInput,
   DashboardRecentPayment,
-  PaymentUpdate,
   PaymentRecord,
   PaymentStatus,
+  PaymentUpdate,
 } from "@/types/domain";
 
 function toPaymentStatus(status: string | null | undefined): PaymentStatus {
@@ -118,56 +118,112 @@ function mapStaffPaymentRow(row: {
 
 export const paymentService = {
   async addPayment(input: CreatePaymentInput): Promise<PaymentRecord> {
-    const { data, error } = await supabase
-      .from("payments")
-      .insert({
-        amount: input.amount,
-        notes: input.notes ?? null,
-        payment_date: input.paymentDate,
-        payment_method: input.paymentMethod,
-        period_month: input.periodMonth,
-        period_year: input.periodYear,
-        receipt_number: input.receiptNumber ?? null,
-        receipt_url: input.receiptUrl ?? null,
-        stall_id: input.stallId,
-        status: input.status ?? "pending",
-        vendor_id: input.vendorId,
-      })
-      .select("*")
+    // System rules for Admin Dashboard Payment recording:
+    // - Always cash mode (no e-wallets / online bank transfer)
+    // - Receipt number is system generated
+    // - Notes are not collected
+
+    const generatedReceiptNumber = (() => {
+      const d = new Date();
+      const pad2 = (n: number) => String(n).padStart(2, "0");
+      const y = d.getFullYear();
+      const m = pad2(d.getMonth() + 1);
+      const day = pad2(d.getDate());
+      const hh = pad2(d.getHours());
+      const mm = pad2(d.getMinutes());
+      const ss = pad2(d.getSeconds());
+      const rand = Math.random().toString(16).slice(2, 6).toUpperCase();
+      return `RCPT-${y}${m}${day}-${hh}${mm}${ss}-${rand}`;
+    })();
+
+    // Get current user's role to decide which path to use
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
       .single();
 
-    if (error) {
-      throw toAppError(error, "Unable to record the payment.");
+    const isPrivileged = roleData?.role === "admin" ||
+      roleData?.role === "staff";
+
+    let insertedId: string;
+
+    const paymentMethod = "cash";
+    const notes = null;
+
+    if (isPrivileged) {
+      const { data, error } = await supabase
+        .from("payments")
+        .insert({
+          amount: input.amount,
+          notes,
+          payment_date: input.paymentDate,
+          payment_method: paymentMethod,
+          period_month: input.periodMonth,
+          period_year: input.periodYear,
+          receipt_number: generatedReceiptNumber,
+          receipt_url: input.receiptUrl ?? null,
+          stall_id: input.stallId,
+          status: input.status ?? "pending",
+          vendor_id: input.vendorId,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw toAppError(error, "Unable to record the payment.");
+      insertedId = data?.id;
+
+      if (!insertedId) {
+        throw new Error("Unable to determine inserted payment id.");
+      }
+    } else {
+      const { data, error } = await supabase
+        .from("payments")
+        .insert({
+          amount: input.amount,
+          notes,
+          payment_date: input.paymentDate,
+          payment_method: paymentMethod,
+          period_month: input.periodMonth,
+          period_year: input.periodYear,
+          receipt_number: generatedReceiptNumber,
+          receipt_url: input.receiptUrl ?? null,
+          stall_id: input.stallId,
+          status: input.status ?? "pending",
+          vendor_id: input.vendorId,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw toAppError(error, "Unable to record the payment.");
+      insertedId = data.id;
     }
 
-    const details = await this.listPayments({
-      vendorId: data.vendor_id,
-    });
-
+    // Fetch the enriched record for the return value
+    const details = await this.listPayments({ vendorId: input.vendorId });
     return (
-      details.find((payment) => payment.id === data.id) ?? {
-        amount: data.amount,
-        approvedAt: data.approved_at,
-        approvedBy: data.approved_by,
+      details.find((p) => p.id === insertedId) ?? {
+        amount: input.amount,
+        approvedAt: null,
+        approvedBy: null,
         businessName: null,
-        createdAt: data.created_at,
-        dueDate: data.due_date,
-        id: data.id,
-        notes: data.notes,
-        paymentDate: data.payment_date,
-        paymentMethod: data.payment_method,
-        periodLabel: `${data.period_month}/${data.period_year}`,
-        periodMonth: data.period_month,
-        periodYear: data.period_year,
-        receiptNumber: data.receipt_number,
-        receiptUrl: data.receipt_url,
-        stallId: data.stall_id,
+        createdAt: new Date().toISOString(),
+        dueDate: null,
+        id: insertedId,
+        notes,
+        paymentDate: input.paymentDate,
+        paymentMethod: paymentMethod,
+        periodLabel: `${input.periodMonth}/${input.periodYear}`,
+        periodMonth: input.periodMonth,
+        periodYear: input.periodYear,
+        receiptNumber: generatedReceiptNumber,
+        receiptUrl: input.receiptUrl ?? null,
+        stallId: input.stallId,
         stallLocation: null,
         stallNumber: null,
-        status: toPaymentStatus(data.status),
-        updatedAt: data.updated_at,
+        status: toPaymentStatus(input.status),
+        updatedAt: new Date().toISOString(),
         vendorEmail: null,
-        vendorId: data.vendor_id,
+        vendorId: input.vendorId,
         vendorName: "Unknown Vendor",
         vendorPhone: null,
       }
@@ -204,8 +260,9 @@ export const paymentService = {
       periodMonth: paymentData.periodMonth,
       periodYear: paymentData.periodYear,
       stallId: paymentData.stallId,
-      status:
-        paymentData.paymentMethod.toLowerCase() === "cash" ? "pending" : "paid",
+      status: paymentData.paymentMethod.toLowerCase() === "cash"
+        ? "pending"
+        : "paid",
       vendorId: user.id,
     });
   },

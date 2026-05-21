@@ -16,9 +16,10 @@ import AdminStalls from "./pages/dashboard/admin/AdminStalls";
 import AdminVendors from "./pages/dashboard/admin/AdminVendors";
 import AdminPayments from "./pages/dashboard/admin/AdminPayments";
 import AdminAnnouncements from "./pages/dashboard/admin/AdminAnnouncements";
-import AdminReports from "./pages/dashboard/admin/AdminReports";
+
 import AdminUserManagement from "./pages/dashboard/admin/AdminUserManagement";
 import AdminAccountRequests from "./pages/dashboard/admin/AdminAccountRequests";
+
 import StaffDashboard from "./pages/dashboard/StaffDashboard";
 import StaffStalls from "./pages/dashboard/staff/StaffStalls";
 import StaffVendors from "./pages/dashboard/staff/StaffVendors";
@@ -70,7 +71,7 @@ const App = () => (
                     path="announcements"
                     element={<AdminAnnouncements />}
                   />
-                  <Route path="reports" element={<AdminReports />} />
+
                   <Route path="users" element={<AdminUserManagement />} />
                   <Route
                     path="account-requests"
