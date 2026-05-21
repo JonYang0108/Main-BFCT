@@ -47,8 +47,9 @@ const statusStyles: Record<VendorRequestStatus, string> = {
   pending: "border-secondary/20 bg-secondary/10 text-secondary",
 };
 
-function RequestStatusBadge({ status }: { status: VendorRequestStatus }) {
-  if (status === "approved") {
+function RequestStatusBadge({ status }: { status: VendorRequestStatus | null | undefined }) {
+  const safeStatus = status ?? "pending";
+  if (safeStatus === "approved") {
     return (
       <Badge variant="outline" className={statusStyles.approved}>
         <CheckCircle className="mr-1 h-3 w-3" />
@@ -57,7 +58,7 @@ function RequestStatusBadge({ status }: { status: VendorRequestStatus }) {
     );
   }
 
-  if (status === "declined") {
+  if (safeStatus === "declined") {
     return (
       <Badge variant="outline" className={statusStyles.declined}>
         <XCircle className="mr-1 h-3 w-3" />
@@ -141,8 +142,8 @@ export default function AdminAccountRequests() {
       }
 
       return (
-        request.full_name.toLowerCase().includes(query) ||
-        request.email.toLowerCase().includes(query)
+        (request.full_name ?? "").toLowerCase().includes(query) ||
+        (request.email ?? "").toLowerCase().includes(query)
       );
     });
   }, [requests, search, statusFilter]);
@@ -319,7 +320,7 @@ export default function AdminAccountRequests() {
                       <TableCell>
                         {new Date(request.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{request.validIds.length}</TableCell>
+                      <TableCell>{request.validIds?.length ?? 0}</TableCell>
                       <TableCell>
                         <RequestStatusBadge status={request.status} />
                       </TableCell>

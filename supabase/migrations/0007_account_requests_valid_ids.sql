@@ -8,6 +8,8 @@ drop view if exists public.v_account_requests_with_valid_ids;
 create view public.v_account_requests_with_valid_ids
 security invoker as
 select
+  vr.id as id,
+  -- kept for backward compatibility with any older client code
   vr.id as request_id,
   vr.user_id,
   vr.status::text as status,

@@ -141,7 +141,10 @@ export const accountRequestServiceV2 = {
         for (
             const row of (joinedRows ?? []) as Array<Record<string, unknown>>
         ) {
-            const requestIdRaw = typeof row.id === "string" ? row.id : null;
+            const requestIdRaw = typeof row.id === "string"
+                ? row.id
+                : (typeof row.request_id === "string" ? row.request_id : null);
+
             const requestId = (requestIdRaw ?? "").toString();
             if (!requestId) {
                 // Joined view row is missing/invalid UUID. Skip to avoid RPC "invalid input syntax for type uuid: \"\"".
