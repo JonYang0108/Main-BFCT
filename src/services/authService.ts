@@ -167,46 +167,33 @@ export const authService = {
   onAuthStateChange,
 
   async register(input: RegisterVendorInput): Promise<AuthRegisterResult> {
-    // Rate limited signup through Edge Function
-    const { data, error } = await supabase.functions.invoke(
-      "rate-limited-signup",
-      {
-        body: {
-          email: input.email.trim(),
-          password: input.password,
-          fullName: input.fullName.trim(),
-          birthdate: input.birthdate,
+    // Direct signup (no Edge Function) to avoid breaking if
+    // rate-limited-signup is unavailable.
+    const {
+      data: signupData,
+      error: signupError,
+    } = await supabase.auth.signUp({
+      email: input.email.trim(),
+      password: input.password,
+      options: {
+        data: {
           address: input.address.trim(),
-          contactNumber: input.contactNumber.trim(),
+          birthdate: input.birthdate,
+          business_name: null,
+          contact_number: input.contactNumber.trim(),
+          full_name: input.fullName.trim(),
+          phone: input.contactNumber.trim(),
         },
       },
-    );
+    });
 
-    if (error) {
-      throw toAppError(error, "Unable to register your account.");
+    if (signupError) {
+      throw toAppError(signupError, "Unable to register your account.");
     }
 
-    // Edge function may return { error: string, code?: string }
-    if (data?.error) {
-      throw new Error(String(data.error));
-    }
-
-    // Edge Function returns { userId }
-    if (!data?.userId) {
+    const userId = signupData.user?.id;
+    if (!userId) {
       throw new Error("Registration completed without a user record.");
-    }
-
-    // NOTE: Your app currently expects uploads to happen right after signup.
-    // Even if session is missing, file uploads will work as long as the user
-    // is authenticated for storage requests.
-    // For this flow, we proceed with uploads the same way the old code did.
-    // If your Supabase auth settings block sessions until email confirmation,
-    // the uploads must be handled by authenticated requests or a different approach.
-    // Keeping the original behavior check but adapt to edge response.
-    if (!data?.session) {
-      // Previous code required data.session for uploads; however your original
-      // comment says uploads can still work even if session is missing.
-      // So we do NOT fail here.
     }
 
     const ID_UPLOAD_TIMEOUT_MS = 20000; // prevent net::ERR_TIMED_OUT in slow networks
@@ -231,12 +218,13 @@ export const authService = {
       await Promise.all(
         input.idFiles.map((file) =>
           withTimeout(
-            fileService.uploadValidId(file, data.userId),
+            fileService.uploadValidId(file, userId),
             ID_UPLOAD_TIMEOUT_MS,
           )
         ),
       );
     } catch (uploadError) {
+      // Keep prior behavior: revoke the session if uploads fail.
       await supabase.auth.signOut();
       throw toAppError(
         uploadError,

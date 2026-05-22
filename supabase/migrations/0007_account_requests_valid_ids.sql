@@ -3,17 +3,22 @@
 --
 -- It does NOT modify existing tables.
 
+-- Ensure the view is created in the same schema Supabase queries (public).
+-- Also ensure an older/incorrect view name is removed.
+
+drop view if exists public.v_account_request_with_valid_ids;
+
 drop view if exists public.v_account_requests_with_valid_ids;
 
 create view public.v_account_requests_with_valid_ids
-security invoker as
+as
 select
   vr.id as id,
   -- kept for backward compatibility with any older client code
   vr.id as request_id,
   vr.user_id,
   vr.status::text as status,
-  vr.account_status::text as account_status,
+  vr.status::text as account_status,
   vr.created_at,
   vr.updated_at,
   vr.full_name,

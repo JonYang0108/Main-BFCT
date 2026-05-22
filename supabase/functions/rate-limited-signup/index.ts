@@ -1,5 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors.ts";
 
 type Payload = {
@@ -16,6 +15,7 @@ interface DenoNamespace {
   env: {
     get(key: string): string | undefined;
   };
+
   serve(
     handler: (request: Request) => Response | Promise<Response>,
   ): void;

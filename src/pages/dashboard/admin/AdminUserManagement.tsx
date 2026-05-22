@@ -127,10 +127,10 @@ const AdminUserManagement = () => {
       return;
     }
 
-    if (!addForm.password || addForm.password.length < 6) {
+    if (!addForm.password || addForm.password.length < 8) {
       toast({
         title: "Error",
-        description: "Password must be at least 6 characters",
+        description: "Password must be at least 8 characters",
         variant: "destructive",
       });
       return;

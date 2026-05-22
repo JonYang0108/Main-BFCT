@@ -1,9 +1,10 @@
-# TODO Migration Progress
+# Migration progress
 
-## Email notification type fixes
-- [x] Analyze current TS errors reported for emailNotificationService.ts
-- [x] Update emailNotificationService.ts to align with NotificationDispatchResult / NotificationAutomationResult
-- [x] Ensure backend emailNotificationsApi returns typed shape (or safely coerce to expected types)
-- [ ] Run TypeScript check / tests to confirm no remaining errors
+- [x] 0007: Fix SQL syntax error near `security` by removing unsupported `security invoker as` clause.
+- [x] 0007: Fix runtime SQL error by removing reference to non-existent `vr.account_status` column; replaced with `vr.status::text as account_status`.
+- [x] 0007: Fix SQL syntax error near `security` by removing unsupported `security invoker as` clause.
+- [x] 0007: Fix runtime SQL error by removing reference to non-existent `vr.account_status` column; replaced with `vr.status::text as account_status`.
+- [x] Create 0009: Ensure admin/staff can SELECT through the RLS-protected underlying tables for the view.
+
 
 

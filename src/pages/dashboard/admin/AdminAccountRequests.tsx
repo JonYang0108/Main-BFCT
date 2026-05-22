@@ -39,8 +39,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { accountRequestServiceV2 } from "@/services/accountRequestService_v2";
 import { fileService } from "@/services/fileService";
+import { useNavigate } from "react-router-dom";
 import type { AccountRequestRecord, VendorRequestStatus } from "@/types/domain";
-
 const statusStyles: Record<VendorRequestStatus, string> = {
   approved: "border-primary/20 bg-primary/10 text-primary",
   declined: "border-destructive/20 bg-destructive/10 text-destructive",
@@ -76,6 +76,7 @@ function RequestStatusBadge({ status }: { status: VendorRequestStatus | null | u
 }
 
 export default function AdminAccountRequests() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
@@ -153,27 +154,40 @@ export default function AdminAccountRequests() {
   ).length;
 
   const handleApprove = async (request: AccountRequestRecord) => {
-    setProcessingId(request.id);
+  setProcessingId(request.id);
 
-    try {
-      await accountRequestServiceV2.approveAccountRequest(request.id);
-      toast({
-        title: "Account approved",
-        description: `${request.full_name} can now access the vendor dashboard.`,
-      });
-      await loadRequests();
-    } catch (error) {
-      toast({
-        description:
-          error instanceof Error ? error.message : "Failed to approve request.",
-        title: "Approval failed",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessingId(null);
-      setViewOpen(false);
-    }
-  };
+  try {
+    await accountRequestServiceV2.approveAccountRequest(request.id);
+    
+    toast({
+      title: "✅ Account Approved",
+      description: `${request.full_name} is now active. Redirecting...`,
+    });
+
+    // Wait a brief moment for DB sync
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Reload requests
+    await loadRequests();
+
+    // Redirect to vendor management after 1.5 seconds
+    setTimeout(() => {
+      navigate("/dashboard/admin/vendors");
+    }, 500);
+
+  } catch (error) {
+    toast({
+      description:
+        error instanceof Error ? error.message : "Failed to approve request.",
+      title: "❌ Approval Failed",
+      variant: "destructive",
+    });
+    console.error("Approval error:", error);
+  } finally {
+    setProcessingId(null);
+    setViewOpen(false);
+  }
+};
 
   const handleDecline = async () => {
     if (!selectedRequest) {

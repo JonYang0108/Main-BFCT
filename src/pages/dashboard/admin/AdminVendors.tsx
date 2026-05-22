@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Search, Users } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,9 @@ import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 import { userService } from "@/services/userService";
 import { vendorService } from "@/services/vendorService";
 import type { VendorOption } from "@/types/domain";
+
+
+
 
 const statusStyles: Record<string, string> = {
   active: "border-primary/20 bg-primary/10 text-primary",
@@ -75,6 +79,7 @@ const initialFormState: EditFormState = {
 };
 
 export default function AdminVendors() {
+  const location = useLocation();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<VendorOption | null>(null);
@@ -102,6 +107,11 @@ export default function AdminVendors() {
   useEffect(() => {
     void loadVendors();
   }, [loadVendors]);
+
+// Refresh when route changes to this page
+  useEffect(() => {
+    void loadVendors();
+  }, [location.pathname]);
 
   useRealtimeRefresh({
     channelName: "admin-vendors-profiles",
