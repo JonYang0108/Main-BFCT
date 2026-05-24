@@ -318,7 +318,7 @@ function RecentPaymentsList({
           <CreditCard className="h-5 w-5 text-secondary" />
           Recent Payments
         </h2>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs px-2" ref="/src/pages/vendor/VendorPayments.tsx" onClick={onViewAll}>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs px-2"  onClick={onViewAll}>
           View All
         </Button>
       </div>
