@@ -3,7 +3,7 @@ import { Menu, X, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import logo from "@/assets/bfct-logo.jfif";
+import logo from "@/assets/bfct-logo.jpg";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
