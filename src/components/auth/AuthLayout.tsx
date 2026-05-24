@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
-import logo from "@/assets/bfct-logo.jpg";
+import logo from "@/assets/bfct-logo.png";
 import heroImage from "@/assets/auth-hero.jpg";
 
 interface AuthLayoutProps {
