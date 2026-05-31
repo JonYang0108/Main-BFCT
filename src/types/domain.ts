@@ -57,7 +57,6 @@ export interface RegisterVendorInput {
   contactNumber: string;
   email: string;
   fullName: string;
-  idFiles: File[];
   password: string;
 }
 

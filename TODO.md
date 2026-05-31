@@ -1,9 +1,8 @@
 # TODO
-
-## Stall delete fix (admin)
-- [x] Confirm delete UI exists: `src/pages/dashboard/admin/AdminStalls.tsx`
-- [x] Prevent false success by updating `src/services/stallService.ts` to throw when 0 rows are deleted
-- [ ] Fix Supabase RLS/policy so `stalls_delete_privileged` actually allows admin deletes
-- [ ] Re-test delete flow in admin dashboard
-- [ ] (Optional) Improve toast message to include supabase error details
+- [ ] Inspect Supabase `valid-ids` storage: find the storage trigger/function that should insert into `public.user_valid_ids`.
+- [ ] Patch migrations (likely `supabase/migrations/0002_storage_and_triggers.sql` or add a new migration) to create:
+  - the storage trigger for bucket `valid-ids`
+  - the function (or trigger handler) that inserts/updates `public.user_valid_ids` with `storage_path`, `file_name`, `file_type`, `user_id`, etc.
+- [ ] Ensure RLS/policies for `public.user_valid_ids` work with trigger execution (if functions are security definer, confirm role).
+- [ ] Re-run the upload flow and confirm the `400 database schema is out of sync` error is resolved.
 

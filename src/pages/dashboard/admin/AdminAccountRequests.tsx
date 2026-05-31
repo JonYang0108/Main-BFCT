@@ -37,7 +37,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
-import { accountRequestServiceV2 } from "@/services/accountRequestService_v2";
+import { accountRequestService } from "@/services/accountRequestService_v2";
 import { fileService } from "@/services/fileService";
 import { useNavigate } from "react-router-dom";
 import type { AccountRequestRecord, VendorRequestStatus } from "@/types/domain";
@@ -96,7 +96,7 @@ export default function AdminAccountRequests() {
     try {
       setLoading(true);
       setErrorMessage(null);
-      setRequests(await accountRequestServiceV2.listAccountRequests());
+setRequests(await accountRequestService.listAccountRequests());
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -157,7 +157,7 @@ export default function AdminAccountRequests() {
   setProcessingId(request.id);
 
   try {
-    await accountRequestServiceV2.approveAccountRequest(request.id);
+await accountRequestService.approveAccountRequest(request.id);
     
     toast({
       title: "✅ Account Approved",
@@ -206,7 +206,7 @@ export default function AdminAccountRequests() {
     setProcessingId(selectedRequest.id);
 
     try {
-      await accountRequestServiceV2.declineAccountRequest(
+await accountRequestServiceV2Service.declineAccountRequest(
         selectedRequest.id,
         declineReason,
       );
@@ -450,7 +450,7 @@ export default function AdminAccountRequests() {
                   Uploaded Valid IDs
                 </h4>
 
-                {selectedRequest.validIds.length === 0 ? (
+                {(selectedRequest.validIds?.length ?? 0) === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No IDs uploaded.
                   </p>
@@ -463,7 +463,7 @@ export default function AdminAccountRequests() {
                         onClick={() => openFileUrl(validId.storage_path)}
                         className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-3 text-left transition-colors hover:bg-muted/60"
                       >
-                        {validId.file_type.startsWith("image/") ? (
+                        {(validId.file_type ?? "").startsWith("image/") ? (
                           <Image className="h-5 w-5 shrink-0 text-primary" />
                         ) : (
                           <FileText className="h-5 w-5 shrink-0 text-primary" />

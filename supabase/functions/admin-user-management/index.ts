@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
+
  * ENTERPRISE-GRADE DENO EDGE FUNCTION
  *
  * Admin user management for Supabase
@@ -452,17 +453,18 @@ async function createVendorAccount(
   payload: CreateVendorPayload,
   supabase: SupabaseClient,
 ): Promise<CreateVendorResult> {
-  log("info", "vendor.create started", { email: payload.email });
+  log("info", "vendor.create started", {
+    email: payload.email,
+  });
 
-  // Check for existing profile
-  log("info", "vendor.create checking existing email");
+  // CHECK EXISTING EMAIL
   let existingProfile;
   let checkError: Error | null = null;
 
   try {
     const response = await supabase
       .from("profiles")
-      .select("user_id", { count: "exact" })
+      .select("user_id")
       .eq("email", payload.email)
       .maybeSingle();
 
@@ -473,7 +475,13 @@ async function createVendorAccount(
   }
 
   if (checkError) {
-    log("error", "vendor.create existing profile check failed", {}, checkError);
+    log(
+      "error",
+      "vendor.create existing profile check failed",
+      {},
+      checkError,
+    );
+
     throw new HttpError(
       500,
       `Database error: ${checkError.message}`,
@@ -485,27 +493,32 @@ async function createVendorAccount(
     log("warn", "vendor.create email conflict", {
       email: payload.email,
     });
+
     throw new ConflictError(
       `A vendor with email ${payload.email} already exists`,
     );
   }
 
-  // Create auth user
-  log("info", "vendor.create creating auth user", { email: payload.email });
+  // CREATE AUTH USER
+  log("info", "vendor.create creating auth user", {
+    email: payload.email,
+  });
+
   let createdUser;
   let createUserError: Error | null = null;
 
   try {
     const response = await supabase.auth.admin.createUser({
       email: payload.email,
-      email_confirm: true,
       password: payload.password,
+      email_confirm: true,
+
       user_metadata: {
+        full_name: payload.fullName,
+        contact_number: payload.phone,
+        phone: payload.phone,
         address: payload.address,
         business_name: payload.businessName,
-        contact_number: payload.phone,
-        full_name: payload.fullName,
-        phone: payload.phone,
         provisioned_by_admin: true,
       },
     });
@@ -518,12 +531,14 @@ async function createVendorAccount(
 
   if (createUserError || !createdUser?.user) {
     const errorMessage = createUserError?.message || "Unknown error";
+
     log(
       "error",
       "vendor.create auth user creation failed",
       {},
       createUserError || new Error(errorMessage),
     );
+
     throw new HttpError(
       500,
       `Failed to create auth user: ${errorMessage}`,
@@ -532,69 +547,34 @@ async function createVendorAccount(
   }
 
   const userId = createdUser.user.id;
-  log("info", "vendor.create auth user created", { userId });
 
-  // Create profile record
-  log("info", "vendor.create creating profile", { userId });
-  let profileError: Error | null = null;
+  log("info", "vendor.create auth user created", {
+    userId,
+  });
 
-  try {
-    const { error } = await supabase.from("profiles").insert({
-      account_status: "active",
-      address: payload.address,
-      business_name: payload.businessName,
-      contact_number: payload.phone,
-      email: payload.email,
-      full_name: payload.fullName,
-      phone: payload.phone,
-      role: "vendor",
-      user_id: userId,
-    } as Record<string, unknown>);
+  // NOTE:
+  // profiles + vendor_requests
+  // are automatically created by PostgreSQL triggers
 
-    profileError = error || null;
-  } catch (error) {
-    profileError = error instanceof Error ? error : new Error(String(error));
-  }
+  // CREATE USER ROLE
+  log("info", "vendor.create creating role", {
+    userId,
+  });
 
-  if (profileError) {
-    await supabase.auth.admin.deleteUser(userId);
-    log("error", "ROLLBACK TRIGGERED - profile failed");
-    log(
-      "error",
-      "vendor.create profile creation failed",
-      { userId },
-      profileError,
-    );
-
-    // Rollback: Delete auth user
-    try {
-      await supabase.auth.admin.deleteUser(userId);
-      log("info", "vendor.create rollback auth user deleted", { userId });
-    } catch (rollbackError) {
-      const err = rollbackError instanceof Error
-        ? rollbackError
-        : new Error(String(rollbackError));
-      log("error", "vendor.create rollback failed", { userId }, err);
-    }
-
-    throw new HttpError(
-      500,
-      `Failed to create profile: ${profileError.message}`,
-      "PROFILE_INSERT_FAILED",
-    );
-  }
-
-  log("info", "vendor.create profile created", { userId });
-
-  // Create role record
-  log("info", "vendor.create creating role", { userId });
   let roleError: Error | null = null;
 
   try {
-    const { error } = await supabase.from("user_roles").insert({
-      role: "vendor",
-      user_id: userId,
-    } as Record<string, unknown>);
+    const { error } = await supabase
+      .from("user_roles")
+      .upsert(
+        {
+          user_id: userId,
+          role: "vendor",
+        },
+        {
+          onConflict: "user_id",
+        },
+      );
 
     roleError = error || null;
   } catch (error) {
@@ -604,40 +584,22 @@ async function createVendorAccount(
   if (roleError) {
     log(
       "error",
-      "vendor.create role insert failed, rolling back",
+      "vendor.create role insert failed",
       { userId },
       roleError,
     );
 
-    // Rollback: Delete profile, then auth user
-    try {
-      await supabase.from("profiles").delete().eq("user_id", userId);
-      log("info", "vendor.create rollback profile deleted", { userId });
-    } catch (rollbackError) {
-      const err = rollbackError instanceof Error
-        ? rollbackError
-        : new Error(String(rollbackError));
-      log(
-        "error",
-        "vendor.create rollback profile delete failed",
-        { userId },
-        err,
-      );
-    }
-
+    // ROLLBACK AUTH USER
     try {
       await supabase.auth.admin.deleteUser(userId);
-      log("info", "vendor.create rollback auth user deleted", { userId });
-    } catch (rollbackError) {
-      const err = rollbackError instanceof Error
-        ? rollbackError
-        : new Error(String(rollbackError));
+
       log(
-        "error",
-        "vendor.create rollback auth delete failed",
+        "info",
+        "vendor.create rollback auth user deleted",
         { userId },
-        err,
       );
+    } catch (_rollbackError) {
+      // ignore rollback failure
     }
 
     throw new HttpError(
@@ -647,8 +609,14 @@ async function createVendorAccount(
     );
   }
 
-  log("info", "vendor.create completed successfully", { userId });
-  return { success: true, userId };
+  log("info", "vendor.create completed successfully", {
+    userId,
+  });
+
+  return {
+    success: true,
+    userId,
+  };
 }
 
 interface DeleteVendorResult {

@@ -47,53 +47,10 @@ export const stallService = {
   },
 
   async deleteStall(id: string): Promise<void> {
-    // 1) Verify it exists first (so "0 rows deleted" can be distinguished from "id not found").
-    const { data: existing, error: existingError } = await supabase
-      .from("stalls")
-      .select("id")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (existingError) {
-      throw toAppError(existingError, "Unable to verify stall.");
-    }
-
-    if (!existing) {
-      throw new Error("Stall not found. It may have already been deleted.");
-    }
-
-    // 2) Attempt delete.
-    const { error, data: deleted } = await supabase
-      .from("stalls")
-      .delete()
-      .eq("id", id)
-      .select("id");
+    const { error } = await supabase.from("stalls").delete().eq("id", id);
 
     if (error) {
       throw toAppError(error, "Unable to delete the stall.");
-    }
-
-    // 3) If rows were not returned, treat as blocked.
-    if (!deleted || deleted.length === 0) {
-      // Re-check existence to distinguish RLS-blocked DELETE from an already-missing row.
-      const { data: stillThere, error: stillThereError } = await supabase
-        .from("stalls")
-        .select("id")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (stillThereError) {
-        throw toAppError(
-          stillThereError,
-          "Unable to verify stall after delete attempt.",
-        );
-      }
-
-      throw new Error(
-        stillThere
-          ? "Stall delete failed (deleted 0 rows). Supabase request succeeded but DELETE was blocked by RLS/policy."
-          : "Stall delete failed (deleted 0 rows), but row no longer exists.",
-      );
     }
   },
 

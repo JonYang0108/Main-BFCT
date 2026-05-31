@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { authService } from "@/services/authService";
 
 import InputField from "./InputField";
-import FileUploadField, { type UploadedFile } from "./FileUploadField";
+
 
 interface RegisterFormProps {
   onSwitchToLogin?: () => void;
@@ -31,7 +31,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [contactNumber, setContactNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [idFiles, setIdFiles] = useState<UploadedFile[]>([]);
+
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -92,8 +92,6 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
       nextErrors.confirmPassword = "Passwords do not match";
     }
 
-    if (idFiles.length < 2) nextErrors.idFiles = "Please upload 2 valid IDs";
-
     if (!agreeTerms) {
       nextErrors.agreeTerms = "You must agree to the Terms & Privacy Policy";
     }
@@ -118,7 +116,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         contactNumber: contactNumber.trim(),
         email: email.trim(),
         fullName: fullName.trim(),
-        idFiles: idFiles.map((file) => file.file),
+
         password,
       });
 
@@ -319,14 +317,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
           error={errors.confirmPassword}
         />
 
-        <FileUploadField
-          files={idFiles}
-          onChange={(files) => {
-            setIdFiles(files);
-            clearError("idFiles");
-          }}
-          error={errors.idFiles}
-        />
+
 
         <div className="pt-1">
           <label className="flex cursor-pointer select-none items-start gap-2">

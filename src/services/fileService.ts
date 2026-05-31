@@ -147,54 +147,72 @@ export const fileService = {
     return storagePath;
   },
 
-  async uploadValidId(file: File, userId?: string): Promise<UserValidIdRow> {
+  async uploadValidId(
+    file: File,
+    userId?: string,
+  ): Promise<UserValidIdRow> {
     ensureAllowedFile(file);
 
     const targetUserId = await requireUserId(userId);
+
     const safeName = sanitizeFileName(file.name);
+
     const storagePath = `${targetUserId}/${Date.now()}-${safeName}`;
 
+    // STORAGE UPLOAD
     const { error: uploadError } = await supabase.storage
-      .from(VALID_ID_BUCKET)
+      .from("valid-ids")
       .upload(storagePath, file, {
         upsert: false,
       });
 
     if (uploadError) {
-      throw toAppError(uploadError, "Unable to upload your valid ID.");
+      console.error(
+        "STORAGE ERROR:",
+        uploadError,
+      );
+
+      throw toAppError(
+        uploadError,
+        "Unable to upload valid ID.",
+      );
     }
 
+    // MANUAL DATABASE INSERT
     const { data, error } = await supabase
       .from("user_valid_ids")
       .insert({
-        file_name: file.name,
-        file_type: file.type,
-        file_url: storagePath,
-        storage_path: storagePath,
         user_id: targetUserId,
-      })
-      .select("*")
+
+        file_name: file.name,
+
+        file_type: file.type,
+
+        file_url: storagePath,
+
+        storage_path: storagePath,
+      } as any)
+      .select()
       .single();
 
-    if (error) {
-      throw toAppError(error, "Unable to save the uploaded ID record.");
+    if (error || !data) {
+      console.error(
+        "DB INSERT ERROR:",
+        error,
+      );
+
+      // rollback uploaded file
+      await supabase.storage
+        .from("valid-ids")
+        .remove([storagePath]);
+
+      throw toAppError(
+        error,
+        "Unable to save valid ID record.",
+      );
     }
 
     return data;
-  },
-
-  async uploadValidIds(
-    files: File[],
-    userId?: string,
-  ): Promise<UserValidIdRow[]> {
-    const uploadedRecords: UserValidIdRow[] = [];
-
-    for (const file of files) {
-      const record = await this.uploadValidId(file, userId);
-      uploadedRecords.push(record);
-    }
-
-    return uploadedRecords;
   },
 };
 
