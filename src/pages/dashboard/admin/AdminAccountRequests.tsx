@@ -206,7 +206,7 @@ await accountRequestService.approveAccountRequest(request.id);
     setProcessingId(selectedRequest.id);
 
     try {
-await accountRequestServiceV2Service.declineAccountRequest(
+await accountRequestService.declineAccountRequest(
         selectedRequest.id,
         declineReason,
       );

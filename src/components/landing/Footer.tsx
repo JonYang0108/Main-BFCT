@@ -17,13 +17,9 @@ const quickLinks = [
 ];
 
 const socialLinks = [
-  {
-    icon: Facebook,
-    href: "https://www.facebook.com/profile.php?id=100091528375133&_rdc=1&_rdr#",
-    target: "_blank",
-    rel: "noopener noreferrer",
-    label: "Facebook",
-  },
+  { icon: Facebook, href: "#", label: "Facebook" },
+  { icon: Twitter, href: "#", label: "Twitter" },
+  { icon: Instagram, href: "#", label: "Instagram" },
 ];
 
 const Footer = () => {
@@ -80,11 +76,11 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-2 text-sm text-background/60">
                 <Phone className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>+63 976 073 3835</span>
+                <span>+63 912 345 6789</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-background/60">
                 <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>#1 Marcos Highway, BFCT , Marikina City, Philippines, 1800</span>
+                <span>BFCT Bagsakan Market, Philippines</span>
               </li>
             </ul>
           </div>
@@ -99,8 +95,6 @@ const Footer = () => {
                 <a
                   key={s.label}
                   href={s.href}
-                  target={s.target}
-                  rel={s.rel}
                   aria-label={s.label}
                   className="h-10 w-10 rounded-lg bg-background/10 flex items-center justify-center text-background/60 hover:bg-background/20 hover:text-background transition-colors"
                 >

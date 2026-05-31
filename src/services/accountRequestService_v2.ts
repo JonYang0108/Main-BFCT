@@ -37,9 +37,7 @@ type VAccountRequestsWithValidIdsRow = {
   valid_id_updated_at?: string | null;
 };
 
-function normalizeAccountStatus(
-  status: string | null,
-): AccountStatus | null {
+function normalizeAccountStatus(status: string | null): AccountStatus | null {
   if (
     status === "active" ||
     status === "declined" ||
@@ -55,11 +53,7 @@ function normalizeAccountStatus(
 function normalizeRequestStatus(
   status: string | null | undefined,
 ): VendorRequestStatus {
-  if (
-    status === "approved" ||
-    status === "declined" ||
-    status === "pending"
-  ) {
+  if (status === "approved" || status === "declined" || status === "pending") {
     return status;
   }
 
@@ -82,17 +76,14 @@ export type CreateAccountRequestInput = {
 
 export const accountRequestService = {
   async approveAccountRequest(requestId: string): Promise<void> {
-    const { data: requestRow, error: requestErr } = await (supabase as any)
+    const { data: requestRow, error: requestErr } = await supabase
       .from("vendor_requests")
       .select("id,user_id")
       .eq("id", requestId)
-      .maybeSingle();
+      .maybeSingle<{ id: string; user_id: string }>();
 
     if (requestErr) {
-      throw toAppError(
-        requestErr,
-        "Unable to approve the account request.",
-      );
+      throw toAppError(requestErr, "Unable to approve the account request.");
     }
 
     const userId = requestRow?.user_id;
@@ -111,10 +102,7 @@ export const accountRequestService = {
       .eq("user_id", userId);
 
     if (profileErr) {
-      throw toAppError(
-        profileErr,
-        "Unable to activate vendor profile.",
-      );
+      throw toAppError(profileErr, "Unable to activate vendor profile.");
     }
 
     // Create vendor role
@@ -131,10 +119,7 @@ export const accountRequestService = {
       );
 
     if (roleErr) {
-      throw toAppError(
-        roleErr,
-        "Unable to provision vendor role.",
-      );
+      throw toAppError(roleErr, "Unable to provision vendor role.");
     }
 
     // Update request
@@ -146,10 +131,7 @@ export const accountRequestService = {
       .eq("id", requestId);
 
     if (requestUpdateErr) {
-      throw toAppError(
-        requestUpdateErr,
-        "Unable to update request status.",
-      );
+      throw toAppError(requestUpdateErr, "Unable to update request status.");
     }
   },
 
@@ -157,17 +139,14 @@ export const accountRequestService = {
     requestId: string,
     declineReason: string,
   ): Promise<void> {
-    const { data: requestRow, error: requestErr } = await (supabase as any)
+    const { data: requestRow, error: requestErr } = await supabase
       .from("vendor_requests")
       .select("id,user_id")
       .eq("id", requestId)
-      .maybeSingle();
+      .maybeSingle<{ id: string; user_id: string }>();
 
     if (requestErr) {
-      throw toAppError(
-        requestErr,
-        "Unable to decline request.",
-      );
+      throw toAppError(requestErr, "Unable to decline request.");
     }
 
     const userId = requestRow?.user_id;
@@ -185,10 +164,7 @@ export const accountRequestService = {
       .eq("user_id", userId);
 
     if (profileErr) {
-      throw toAppError(
-        profileErr,
-        "Unable to decline vendor profile.",
-      );
+      throw toAppError(profileErr, "Unable to decline vendor profile.");
     }
 
     // Update request
@@ -201,10 +177,7 @@ export const accountRequestService = {
       .eq("id", requestId);
 
     if (requestUpdateErr) {
-      throw toAppError(
-        requestUpdateErr,
-        "Unable to update request.",
-      );
+      throw toAppError(requestUpdateErr, "Unable to update request.");
     }
   },
 
@@ -228,26 +201,28 @@ export const accountRequestService = {
     const userId = user.id;
 
     // 1) Ensure FK target row exists (likely public.profiles)
-    // Adjust the fields below to match your profiles schema.
-    const { error: profileErr } = await (supabase as any)
+    const { error: profileErr } = await supabase
       .from("profiles")
       .upsert(
         {
           user_id: userId,
-          email: payload.email, // include only if profiles has this column
-          full_name: payload.full_name, // include only if profiles has this column
+          email: payload.email,
+          full_name: payload.full_name,
           account_status: "pending",
-          role: null, // or "vendor", depending on your app logic
+          role: null,
         },
         { onConflict: "user_id" },
       );
 
     if (profileErr) {
-      throw toAppError(profileErr, "Unable to create/ensure vendor profile.");
+      throw toAppError(
+        profileErr,
+        "Unable to create/ensure vendor profile.",
+      );
     }
 
     // 2) Upsert vendor request
-    const { error: requestErr } = await (supabase as any)
+    const { error: requestErr } = await supabase
       .from("vendor_requests")
       .upsert(
         {
@@ -271,24 +246,67 @@ export const accountRequestService = {
   },
 
   async listAccountRequests(): Promise<AccountRequestRecord[]> {
-    const { data: joinedRows, error: joinedError } = await (supabase as any)
+    // NOTE: This function constructs AccountRequestRecord objects from a joined/denormalized
+    // Supabase query. To avoid brittle inference (which can lead to `never`-typed properties),
+    // we build using explicit casting via a helper.
+
+    type AccountRequestLoose =
+      & Omit<
+        AccountRequestRecord,
+        "validIds"
+      >
+      & { validIds: UserValidIdRow[] };
+
+    const makeAccountRequest = (
+      row: VAccountRequestsWithValidIdsRow,
+      userId: string,
+    ): AccountRequestLoose => ({
+      id: row.id ?? row.request_id ?? "",
+      user_id: userId,
+
+      full_name: row.full_name ?? "",
+      email: row.email ?? "",
+
+      business_name: row.business_name ?? null,
+      phone: row.phone ?? row.profile_phone ?? "",
+
+      contact_number: row.contact_number ?? null,
+
+      address: row.address ?? row.profile_address ?? "",
+
+      birthdate: row.birthdate ?? null,
+
+      status: normalizeRequestStatus(row.status),
+
+      account_status: normalizeAccountStatus(row.account_status),
+
+      decline_reason: row.decline_reason ?? null,
+
+      created_at: row.created_at ?? new Date().toISOString(),
+
+      updated_at: row.updated_at ?? row.created_at ?? new Date().toISOString(),
+
+      profile: userId ? profileMap.get(userId) ?? null : null,
+
+      validIds: [],
+    });
+    // Note: supabase's typed client isn't aligned with this joined/extended row shape.
+    const { data: joinedRowsRaw, error: joinedError } = await supabase
       .from("vendor_requests")
       .select("*")
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
     if (joinedError) {
-      throw toAppError(
-        joinedError,
-        "Unable to load account requests.",
-      );
+      throw toAppError(joinedError, "Unable to load account requests.");
     }
+
+    const joinedRows =
+      (joinedRowsRaw ?? []) as unknown as VAccountRequestsWithValidIdsRow[];
 
     const userIds: string[] = Array.from(
       new Set(
         (joinedRows ?? [])
-          .map((r: any) => typeof r.user_id === "string" ? r.user_id : null)
+          .map((r) => (typeof r.user_id === "string" ? r.user_id : null))
           .filter((id): id is string => Boolean(id)),
       ),
     );
@@ -301,15 +319,12 @@ export const accountRequestService = {
       : { data: [], error: null };
 
     if (profilesError) {
-      throw toAppError(
-        profilesError,
-        "Unable to load profiles.",
-      );
+      throw toAppError(profilesError, "Unable to load profiles.");
     }
 
     const profileMap = new Map<string, ProfileRow>();
 
-    for (const profile of profiles ?? []) {
+    for (const profile of (profiles ?? []) as ProfileRow[]) {
       profileMap.set(profile.user_id, profile);
     }
 
@@ -317,13 +332,12 @@ export const accountRequestService = {
 
     for (const row of joinedRows ?? []) {
       const requestId = row.id ?? row.request_id ?? "";
-
       if (!requestId) continue;
 
       const userId = row.user_id ?? "";
 
       if (!grouped.has(requestId)) {
-        grouped.set(requestId, {
+        const newRecord: AccountRequestRecord = {
           id: requestId,
           user_id: userId,
 
@@ -331,61 +345,52 @@ export const accountRequestService = {
           email: row.email ?? "",
 
           business_name: row.business_name ?? null,
-          phone: row.phone ??
-            row.profile_phone ??
-            "",
+          phone: row.phone ?? row.profile_phone ?? "",
 
           contact_number: row.contact_number ?? null,
 
-          address: row.address ??
-            row.profile_address ??
-            "",
+          address: row.address ?? row.profile_address ?? "",
 
           birthdate: row.birthdate ?? null,
 
-          status: normalizeRequestStatus(
-            row.status,
-          ),
+          status: normalizeRequestStatus(row.status),
 
-          account_status: normalizeAccountStatus(
-            row.account_status,
-          ),
+          account_status: normalizeAccountStatus(row.account_status),
 
           decline_reason: row.decline_reason ?? null,
 
-          created_at: row.created_at ??
-            new Date().toISOString(),
+          created_at: row.created_at ?? new Date().toISOString(),
 
-          updated_at: row.updated_at ??
-            row.created_at ??
+          updated_at: row.updated_at ?? row.created_at ??
             new Date().toISOString(),
 
           profile: userId ? profileMap.get(userId) ?? null : null,
 
-          validIds: [],
-        });
+          // Explicit typing prevents `never[]` inference
+          validIds: [] as UserValidIdRow[],
+        };
+
+        grouped.set(requestId, newRecord);
       }
 
       if (row.valid_id_row_id) {
-        grouped.get(requestId)?.validIds.push({
+        const existing = grouped.get(requestId);
+        if (!existing) continue;
+
+        (existing.validIds as UserValidIdRow[]).push({
           id: row.valid_id_row_id,
           user_id: userId,
 
           file_name: row.file_name ?? "",
-
           file_type: row.file_type ?? "",
-
           file_url: row.file_url ?? null,
-
           storage_path: row.storage_path ?? "",
 
-          created_at: row.valid_id_created_at ??
-            new Date().toISOString(),
-
+          created_at: row.valid_id_created_at ?? new Date().toISOString(),
           updated_at: row.valid_id_updated_at ??
             row.valid_id_created_at ??
             new Date().toISOString(),
-        } as UserValidIdRow);
+        } as unknown as UserValidIdRow);
       }
     }
 

@@ -106,12 +106,8 @@ export default function AdminVendors() {
 
   useEffect(() => {
     void loadVendors();
-  }, [loadVendors]);
+  }, [loadVendors, location.pathname]);
 
-// Refresh when route changes to this page
-  useEffect(() => {
-    void loadVendors();
-  }, [location.pathname]);
 
   useRealtimeRefresh({
     channelName: "admin-vendors-profiles",
