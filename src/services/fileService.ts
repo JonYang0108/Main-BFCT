@@ -191,7 +191,7 @@ export const fileService = {
         file_url: storagePath,
 
         storage_path: storagePath,
-      } as any)
+      } as never)
       .select()
       .single();
 

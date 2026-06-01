@@ -5,7 +5,6 @@ import type {
   AccountRequestRecord,
   AccountStatus,
   ProfileRow,
-  UserValidIdRow,
   VendorRequestStatus,
 } from "@/types/domain";
 
@@ -27,14 +26,6 @@ type VAccountRequestsWithValidIdsRow = {
   profile_phone?: string | null;
   status?: string | null;
   updated_at?: string | null;
-
-  valid_id_row_id?: string | null;
-  file_name?: string | null;
-  file_type?: string | null;
-  file_url?: string | null;
-  storage_path?: string | null;
-  valid_id_created_at?: string | null;
-  valid_id_updated_at?: string | null;
 };
 
 function normalizeAccountStatus(status: string | null): AccountStatus | null {
@@ -222,23 +213,24 @@ export const accountRequestService = {
     }
 
     // 2) Upsert vendor request
+    const requestData = {
+      user_id: userId,
+      email: payload.email,
+      full_name: payload.full_name,
+      business_name: payload.business_name ?? null,
+      phone: payload.phone ?? null,
+      contact_number: payload.contact_number ?? null,
+      address: payload.address ?? "",
+      birthdate: payload.birthdate ?? null,
+      status: "pending",
+      decline_reason: null,
+    };
+
     const { error: requestErr } = await supabase
       .from("vendor_requests")
-      .upsert(
-        {
-          user_id: userId,
-          email: payload.email,
-          full_name: payload.full_name,
-          business_name: payload.business_name ?? null,
-          phone: payload.phone ?? null,
-          contact_number: payload.contact_number ?? null,
-          address: payload.address ?? "",
-          birthdate: payload.birthdate ?? null,
-          status: "pending",
-          decline_reason: null,
-        },
-        { onConflict: "user_id" },
-      );
+      .upsert(requestData as never, {
+        onConflict: "user_id",
+      });
 
     if (requestErr) {
       throw toAppError(requestErr, "Unable to submit account request.");
@@ -250,46 +242,6 @@ export const accountRequestService = {
     // Supabase query. To avoid brittle inference (which can lead to `never`-typed properties),
     // we build using explicit casting via a helper.
 
-    type AccountRequestLoose =
-      & Omit<
-        AccountRequestRecord,
-        "validIds"
-      >
-      & { validIds: UserValidIdRow[] };
-
-    const makeAccountRequest = (
-      row: VAccountRequestsWithValidIdsRow,
-      userId: string,
-    ): AccountRequestLoose => ({
-      id: row.id ?? row.request_id ?? "",
-      user_id: userId,
-
-      full_name: row.full_name ?? "",
-      email: row.email ?? "",
-
-      business_name: row.business_name ?? null,
-      phone: row.phone ?? row.profile_phone ?? "",
-
-      contact_number: row.contact_number ?? null,
-
-      address: row.address ?? row.profile_address ?? "",
-
-      birthdate: row.birthdate ?? null,
-
-      status: normalizeRequestStatus(row.status),
-
-      account_status: normalizeAccountStatus(row.account_status),
-
-      decline_reason: row.decline_reason ?? null,
-
-      created_at: row.created_at ?? new Date().toISOString(),
-
-      updated_at: row.updated_at ?? row.created_at ?? new Date().toISOString(),
-
-      profile: userId ? profileMap.get(userId) ?? null : null,
-
-      validIds: [],
-    });
     // Note: supabase's typed client isn't aligned with this joined/extended row shape.
     const { data: joinedRowsRaw, error: joinedError } = await supabase
       .from("vendor_requests")
@@ -303,11 +255,11 @@ export const accountRequestService = {
     const joinedRows =
       (joinedRowsRaw ?? []) as unknown as VAccountRequestsWithValidIdsRow[];
 
-    const userIds: string[] = Array.from(
+    const userIds = Array.from(
       new Set(
         (joinedRows ?? [])
-          .map((r) => (typeof r.user_id === "string" ? r.user_id : null))
-          .filter((id): id is string => Boolean(id)),
+          .map((r) => r.user_id)
+          .filter((id): id is string => !!id),
       ),
     );
 
@@ -328,7 +280,7 @@ export const accountRequestService = {
       profileMap.set(profile.user_id, profile);
     }
 
-    const grouped = new Map<string, AccountRequestRecord>();
+    const grouped = new Map();
 
     for (const row of joinedRows ?? []) {
       const requestId = row.id ?? row.request_id ?? "";
@@ -337,7 +289,7 @@ export const accountRequestService = {
       const userId = row.user_id ?? "";
 
       if (!grouped.has(requestId)) {
-        const newRecord: AccountRequestRecord = {
+        const newRecord = {
           id: requestId,
           user_id: userId,
 
@@ -365,32 +317,9 @@ export const accountRequestService = {
             new Date().toISOString(),
 
           profile: userId ? profileMap.get(userId) ?? null : null,
-
-          // Explicit typing prevents `never[]` inference
-          validIds: [] as UserValidIdRow[],
         };
 
-        grouped.set(requestId, newRecord);
-      }
-
-      if (row.valid_id_row_id) {
-        const existing = grouped.get(requestId);
-        if (!existing) continue;
-
-        (existing.validIds as UserValidIdRow[]).push({
-          id: row.valid_id_row_id,
-          user_id: userId,
-
-          file_name: row.file_name ?? "",
-          file_type: row.file_type ?? "",
-          file_url: row.file_url ?? null,
-          storage_path: row.storage_path ?? "",
-
-          created_at: row.valid_id_created_at ?? new Date().toISOString(),
-          updated_at: row.valid_id_updated_at ??
-            row.valid_id_created_at ??
-            new Date().toISOString(),
-        } as unknown as UserValidIdRow);
+        grouped.set(requestId, newRecord as AccountRequestRecord);
       }
     }
 

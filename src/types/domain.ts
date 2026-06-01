@@ -134,7 +134,7 @@ export interface AccountRequestRecord {
   address: string;
   birthdate: string | null;
   business_name: string | null;
-  contact_number: string | null;
+  contact_number?: string | null;
   created_at: string;
   decline_reason: string | null;
   email: string;
@@ -145,7 +145,6 @@ export interface AccountRequestRecord {
   status: VendorRequestStatus;
   updated_at: string;
   user_id: string;
-  validIds: UserValidIdRow[];
 }
 
 export interface CreatePaymentInput {

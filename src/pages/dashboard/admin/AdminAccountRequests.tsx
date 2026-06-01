@@ -334,7 +334,6 @@ await accountRequestService.declineAccountRequest(
                       <TableCell>
                         {new Date(request.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{request.validIds?.length ?? 0}</TableCell>
                       <TableCell>
                         <RequestStatusBadge status={request.status} />
                       </TableCell>
@@ -443,43 +442,6 @@ await accountRequestService.declineAccountRequest(
                     </span>
                   </div>
                 ) : null}
-              </div>
-
-              <div>
-                <h4 className="mb-3 text-sm font-semibold text-foreground">
-                  Uploaded Valid IDs
-                </h4>
-
-                {(selectedRequest.validIds?.length ?? 0) === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No IDs uploaded.
-                  </p>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {selectedRequest.validIds.map((validId) => (
-                      <button
-                        key={validId.id}
-                        type="button"
-                        onClick={() => openFileUrl(validId.storage_path)}
-                        className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-3 text-left transition-colors hover:bg-muted/60"
-                      >
-                        {(validId.file_type ?? "").startsWith("image/") ? (
-                          <Image className="h-5 w-5 shrink-0 text-primary" />
-                        ) : (
-                          <FileText className="h-5 w-5 shrink-0 text-primary" />
-                        )}
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {validId.file_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Click to view
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {selectedRequest.status === "pending" ? (
