@@ -316,10 +316,10 @@ await accountRequestService.declineAccountRequest(
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[30%]">Name</TableHead>
-        <TableHead className="w-[30%]">Email</TableHead>
-        <TableHead className="w-[15%]">Requested</TableHead>
-        <TableHead className="w-[15%]">Status</TableHead>
+                    <TableHead >Name</TableHead>
+        <TableHead >Email</TableHead>
+        <TableHead >Requested</TableHead>
+        <TableHead>Status</TableHead>
         <TableHead className="w-[10%] text-center">
           Actions
         </TableHead>
