@@ -313,84 +313,77 @@ await accountRequestService.declineAccountRequest(
             </div>
           ) : (
             <div className="overflow-x-auto">
-  <Table className="w-full table-fixed">
-    <TableHeader>
-      <TableRow>
-        <TableHead className="w-[30%]">Name</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[30%]">Name</TableHead>
         <TableHead className="w-[30%]">Email</TableHead>
         <TableHead className="w-[15%]">Requested</TableHead>
         <TableHead className="w-[15%]">Status</TableHead>
         <TableHead className="w-[10%] text-center">
           Actions
         </TableHead>
-      </TableRow>
-    </TableHeader>
+                  </TableRow>
+                </TableHeader>
 
-    <TableBody>
-      {filteredRequests.map((request) => (
-        <TableRow key={request.id}>
-          <TableCell className="font-medium truncate">
-            {request.full_name}
-          </TableCell>
+                <TableBody>
+                  {filteredRequests.map((request) => (
+                    <TableRow key={request.id}>
+                      <TableCell className="font-medium">
+                        {request.full_name}
+                      </TableCell>
+                      <TableCell>{request.email}</TableCell>
+                      <TableCell>
+                        {new Date(request.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <RequestStatusBadge status={request.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setViewOpen(true);
+                            }}
+                          >
+                            <Eye className="-ml-0.0 h-4 w-4" />
+                          </Button>
 
-          <TableCell className="truncate">
-            {request.email}
-          </TableCell>
-
-          <TableCell>
-            {new Date(request.created_at).toLocaleDateString()}
-          </TableCell>
-
-          <TableCell>
-            <RequestStatusBadge status={request.status} />
-          </TableCell>
-
-          <TableCell className="text-right">
-            <div className="flex justify-end items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setSelectedRequest(request);
-                  setViewOpen(true);
-                }}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-
-              {request.status === "pending" ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-primary"
-                    disabled={processingId === request.id}
-                    onClick={() => handleApprove(request)}
-                  >
-                    <UserCheck className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive"
-                    onClick={() => {
-                      setDeclineReason("");
-                      setSelectedRequest(request);
-                      setDeclineOpen(true);
-                    }}
-                  >
-                    <UserX className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : null}
+                          {request.status === "pending" ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-primary"
+                                disabled={processingId === request.id}
+                                onClick={() => handleApprove(request)}
+                              >
+<UserCheck className="-ml-0.5 h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive"
+                                onClick={() => {
+                                  setDeclineReason("");
+                                  setSelectedRequest(request);
+                                  setDeclineOpen(true);
+                                }}
+                              >
+<UserX className="-ml-0.5 h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          </TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-</div>
           )}
         </Card>
       </div>
