@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import NotificationPanel from "@/components/NotificationPanel";
 import SignOutDialog from "@/components/SignOutDialog";
 import ThemeToggle from "@/components/ThemeToggle";
-import logo from "@/assets/bfct-logo.jfif";
+import logo from "@/assets/bfct-logo.jpg";
 import {
   LayoutDashboard,
   LogOut,

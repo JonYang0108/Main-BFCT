@@ -1,4 +1,4 @@
-import logo from "@/assets/bfct-logo.jfif";
+import logo from "@/assets/bfct-logo.jpg";
 import {
   Facebook,
   Twitter,
